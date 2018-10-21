@@ -1,0 +1,160 @@
+--- 
+title: Programming Assignment 2 
+author: <Branton Li - 301311707> 
+output: 
+  html_document:
+    mathjax: default 
+--- 
+```{r include=FALSE} 
+#libraries are loaded here
+#library("ggplot2")
+library("tree")
+library("plyr")
+library("dplyr")
+
+```
+
+## Task 1 
+
+```{r} 
+#your code for task 1 comes here 
+titanic <- read.csv(file="titanic3.csv")
+titanic <- titanic[-1310,]
+train_size <- floor(0.8*nrow(titanic))
+set.seed(1)
+tmp <- sample(1:nrow(titanic), size=train_size)
+train <- titanic[tmp,]
+test <- titanic[-tmp,]
+
+``` 
+<report text for task 1 comes here> 
+  
+## Task 2 
+```{r} 
+#your code for task 2 comes here 
+train[train==""]<-NA
+test[test==""]<-NA
+
+na_train <-apply(train, 2, function(y) sum(is.na(y)))
+print(na_train)
+
+na_test <-apply(test, 2, function(y) sum(is.na(y)))
+print(na_test)
+``` 
+<report text for task 2 comes here> 
+
+## Task 3 
+```{r} 
+
+``` 
+<report text for task 3 comes here> 
+The attributes that I will use as features are pclass, age, sex, sibsp, parch, fare, ticket, cabin and embarked.
+
+the reasons for picking such attributes as features are as follows:
+pclass: 
+the class that the people belongs to will affect their room location. People with higher passenger class may live closer to the lifeboat hence higher chance of survival.
+
+age:
+The age of the passenger should hold a heavy weight on their survival rate. Infants and elders will probably have a lower chance of survival when incident occurs.
+
+sex:
+The gender of the passenger is important as males tend to save females first before ensuring their own safety.
+
+sibsp:
+The number of siblings/spouses aboard should have immense effect on one's survival rate. Since the passenger may have higher intension to save their siblings/spouses before getting themselves in a safe spot.
+
+parch:
+The number of parents/children aboard should have immense effect on one's survival rate.Since the passenger may have higher intension to save their parents/children before getting themselves in a safe spot.
+
+fare:
+Fare is important such that higher the fare the passenger pays indicates that they may belong to passenger class or they have more companies to go on to the cruise with them and hence higher chance of related to casualty.
+
+cabin, embarked, ticket, name, home.dest:
+For the above 4 attributes, they can all be used as features as they are not future data.
+
+boat, body, survived:
+For the above 3 attributes, they cannot be used as attributes as they are all future data.
+
+## Task 4 
+```{r} 
+preprocess <- function(name_frame){
+  mean_age <- mean(name_frame[,5], na.rm=TRUE)
+  mean_fare <- mean(name_frame[,9], na.rm=TRUE)
+  count(name_frame,"embarked")
+  name_frame$embarked[is.na(name_frame[,11])] <- "S"
+  name_frame$age[is.na(name_frame[,5])] <- mean_age
+  name_frame$fare[is.na(name_frame[,9])] <- mean_fare
+  name_frame<- name_frame[,-c(3,8,10,12:14)]
+  name_frame<- mutate(name_frame,
+    pclass = factor(pclass, levels = c(1,2,3), labels = c("Top", "Middle", "Basic")),
+    survived = factor(survived, levels = c(0,1), labels = c(FALSE, TRUE))
+  )
+  return(name_frame)
+}
+
+train <- preprocess(train)
+test <- preprocess(test) 
+
+``` 
+<report text for task 4 comes here> 
+I have dropped the columns: cabin, boat, body, home.dest and the reasons are as follows:
+Count of missing data from the original data set:
+```{r} 
+titanic[titanic==""]<-NA
+na_count <-apply(titanic, 2, function(y) sum(is.na(y)))
+print(na_count)
+``` 
+cabin, boat, body:
+all 3 of the columns have more than 60% of data missing and the classification based on these attributes will not be accurate. Even if we try to replace missing data with estimate values, the value that get replaced will not be accurate or useful as we dont have a good estimate for the data. Therefore, these three columns are dropped.
+
+home.dest:
+The reason for dropping the home.dest column is that the data is too spread out as most of the passengers have different home address, if we include this feature in the decision tree or use it as a predicting feature, there is a high chance such that we will not have an accurate estimation. Therefore, the home.dest is dropped even when the column has around 60% of useable data.
+
+ticket, name:
+Although we have almost complete data on attribute name and column, the data is unique and hence too spread out and with too many levels. Moreover, the two attributes may not contribute heavily when estimating the survival rate of the passenger. Therefore, these 2 columns are dropped.
+
+fare, age:
+For the columns fare and age, the missing data is being filled with the mean value of the respective column. Filling the missing data with the column mean should not affect the overall mining result and we can still obtain an accurate estimation on the passengers survival rate with these two columns included as featuers.
+
+embarked:
+For the embarked column, the missing data is being filled with the data of highest frequency of the column. Since the values in the embarked column is categorical, we cannot take the mean like age and fare to replace the missing value. Using the mode of the column to fill up the missing data should not affect the overall distribution of data and we can still obtain a good estimation of the data we want to investigate.
+
+pclass:
+for the column pclass, I mutated the value from (1,2,3) to (Top,Middle,Basic). By changing the represenation method of the data, it will be easier to observe in the tree as they have become categorical data.
+
+survived:
+for the column pclass, I mutated the value from (0,1) to booleans (FALSE, TRUE). By changing the represenation method of the data, it will be easier to observe in the tree as they have become boolean data.
+
+## Task 5 
+```{r} 
+train_tree <- tree(formula = survived ~., data = train, method="class")
+plot(train_tree, type="uniform")
+text(train_tree, all=TRUE, pretty=0)
+
+``` 
+<report text for task 5 comes here> 
+```{r} 
+summary(train_tree)
+``` 
+The size of the is 7.
+```{r} 
+survived.pred <- predict(train_tree, test, type="class")
+table_pred <- table(test$survived, survived.pred)
+table_pred
+accuracy <- sum(diag(table_pred)) / sum(table_pred)
+print(accuracy)
+``` 
+The accuracy of the tree on the test dataset equals to 0.8206107.
+
+
+## Task 6 
+```{r} 
+
+``` 
+<report text for task 6 comes here> 
+
+## Task 7 
+```{r} 
+train.cv <- cv.tree(train_tree)
+``` 
+<report text for task 7 comes here> 
