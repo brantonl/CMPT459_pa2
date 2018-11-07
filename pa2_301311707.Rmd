@@ -34,46 +34,27 @@ test <- titanic[-tmp,]
 #your code for task 2 comes here 
 train[train==""]<-NA
 test[test==""]<-NA
-
-na_train <-apply(train, 2, function(y) sum(is.na(y)))
-print(na_train)
-
-na_test <-apply(test, 2, function(y) sum(is.na(y)))
-print(na_test)
 ``` 
 <report text for task 2 comes here> 
+The count of missing data for the training data is:
+```{r} 
+na_train <-apply(train, 2, function(y) sum(is.na(y)))
+print(na_train)
+```
+The count of missing data for the testing data is:
+```{r} 
+na_test <-apply(test, 2, function(y) sum(is.na(y)))
+print(na_test)
+```
 
 ## Task 3 
 ```{r} 
 
 ``` 
 <report text for task 3 comes here> 
-The attributes that I will use as features are pclass, age, sex, sibsp, parch, fare, ticket, cabin and embarked.
+The attributes that I will use as features are pclass, age, sex, sibsp, parch, fare, ticket, cabin, embarked, name and home.dest as all of the above attributes are past data. 
 
-the reasons for picking such attributes as features are as follows:
-pclass: 
-the class that the people belongs to will affect their room location. People with higher passenger class may live closer to the lifeboat hence higher chance of survival.
-
-age:
-The age of the passenger should hold a heavy weight on their survival rate. Infants and elders will probably have a lower chance of survival when incident occurs.
-
-sex:
-The gender of the passenger is important as males tend to save females first before ensuring their own safety.
-
-sibsp:
-The number of siblings/spouses aboard should have immense effect on one's survival rate. Since the passenger may have higher intension to save their siblings/spouses before getting themselves in a safe spot.
-
-parch:
-The number of parents/children aboard should have immense effect on one's survival rate.Since the passenger may have higher intension to save their parents/children before getting themselves in a safe spot.
-
-fare:
-Fare is important such that higher the fare the passenger pays indicates that they may belong to passenger class or they have more companies to go on to the cruise with them and hence higher chance of related to casualty.
-
-cabin, embarked, ticket, name, home.dest:
-For the above 4 attributes, they can all be used as features as they are not future data.
-
-boat, body, survived:
-For the above 3 attributes, they cannot be used as attributes as they are all future data.
+Boat and body are not used as they are future data, we can only obtain the data for these two attributes after the titanic hit the iceberg.
 
 ## Task 4 
 ```{r} 
@@ -130,7 +111,6 @@ for the column pclass, I mutated the value from (0,1) to booleans (FALSE, TRUE).
 train_tree <- tree(formula = survived ~., data = train, method="class")
 plot(train_tree, type="uniform")
 text(train_tree, all=TRUE, pretty=0)
-
 ``` 
 <report text for task 5 comes here> 
 ```{r} 
@@ -146,15 +126,29 @@ print(accuracy)
 ``` 
 The accuracy of the tree on the test dataset equals to 0.8206107.
 
-
 ## Task 6 
 ```{r} 
-
+plot(train_tree, type="uniform")
+text(train_tree, all=TRUE, pretty=0)
 ``` 
 <report text for task 6 comes here> 
+\n From the decision tree, we can conclude that the three most important features are sex, pclass and age in decreasing order. The more closer for an attribute to be used to split data near the root, it means the more weight that attribute carries in terms of predicting the classification of the data.Sex is used for the first split of from the root, hence it is the most important attribute among all. pclass is used afterwards hence it is the second most important and followed by age as the third.
+
+When explaining without data mining knowledge, sex is the most important factor becuase generally females are prioritized to be saved before male in commmon social practic. The males are exposed to higher risk when getting all the females to safety first before getting themselves out of danger. For pclass, it is important as it may be possible such that higher ordinal value of pclass means closer to the escape boat, hence higher chance of survival. And for age, the children and elderly are prioritized to be saved first, hence having higher chance of survival. The decision tree supports such idea as it uses 9.5 as the best spliting point when spliting the attribute age.
+
+From the decision tree, we learn that a male who belongs to top/middle pclass, who belongs to normal pclass and purchase a ticket with less than $23.35 or a female who ages under 9.5 and have less than 2.5 of sibsp have high chance of survival.
 
 ## Task 7 
 ```{r} 
 train.cv <- cv.tree(train_tree)
+optimial_k <- train.cv$size[which.min(train.cv$dev)]
+print(optimial_k)
 ``` 
 <report text for task 7 comes here> 
+By using the function cv.tree(), we calculate the deviance or number of misclassifications as a function of the cost-complexity parameter by running a K-fold cross-validation experiment. And cv.tree function returned the optimal level of tree complexity to be 7.
+```{r} 
+prune_tree <- prune.tree(train_tree, best=optimial_k)
+summary(prune_tree)
+``` 
+According to the reading the summary of the pruned tree, the size of the pruned decision tree is 
+7.
